@@ -5,4 +5,11 @@ const mockRepository = {
   delete: jest.fn(),
 }
 
-export const getRepository = jest.fn(() => mockRepository)
+jest.mock('typeorm', () => ({
+  createConnection: jest.fn(),
+  getRepository: jest.fn().mockReturnValue(mockRepository),
+  PrimaryGeneratedColumn: () => {},
+  Column: () => {},
+  Entity: () => {},
+  ManyToOne: () => {},
+}))

@@ -25,7 +25,7 @@ describe('ProductService', () => {
   })
 
   describe('getAllProducts', () => {
-    it('should return cached products if available', async () => {
+    it('returns cached products if available', async () => {
       const cachedProducts = [{id: 1, name: 'Cached Product'}]
       ;(getAsync as jest.Mock).mockResolvedValue(JSON.stringify(cachedProducts))
 
@@ -36,7 +36,7 @@ describe('ProductService', () => {
       expect(ProductRepository.find).not.toHaveBeenCalled()
     })
 
-    it('should fetch products from database and cache them if not cached', async () => {
+    it('fetches products from database and cache them if not cached', async () => {
       const products = [{id: 1, name: 'Database Product'}]
       ;(getAsync as jest.Mock).mockResolvedValue(null)
       ;(ProductRepository.find as jest.Mock).mockResolvedValue(products)
@@ -56,7 +56,7 @@ describe('ProductService', () => {
   })
 
   describe('createProduct', () => {
-    it('should create and save a new product', async () => {
+    it('creates and saves a new product', async () => {
       const productData: Partial<Product> = {
         name: 'New Product',
         price: 9.99,
