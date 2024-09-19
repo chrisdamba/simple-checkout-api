@@ -5,5 +5,21 @@ const client = redis.createClient({
   url: `${process.env.REDIS_URL}:${process.env.REDIS_PORT || '6379'}`,
 })
 
-export const getAsync = promisify(client.get).bind(client)
-export const setAsync = promisify(client.set).bind(client)
+client.on('error', (err) => console.error('Redis Client Error', err))
+;(async () => {
+  await client.connect()
+})()
+
+export const getAsync = (key: string) => client.get(key)
+
+export const setAsync = (
+  key: string,
+  value: string,
+  expirationInSeconds?: number
+) => {
+  if (expirationInSeconds) {
+    return client.setEx(key, expirationInSeconds, value)
+  } else {
+    return client.set(key, value)
+  }
+}
