@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "seed": "ts-node src/utils/seedDatabase.ts",
     "test": "jest",
     "test:watch": "jest --watch"
   },
