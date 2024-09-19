@@ -1,11 +1,12 @@
 import {PaymentService} from '../PaymentService'
-import {Payment, PaymentStatus} from '../../models/Payment'
+import {Payment, PaymentMethod, PaymentStatus} from '../../models/Payment'
 
 jest.mock('typeorm', () => ({
   PrimaryGeneratedColumn: () => {},
   Column: () => {},
   Entity: () => {},
   ManyToOne: () => {},
+  RelationId: () => {},
 }))
 
 jest.mock('#/config/dataSource', () => ({
@@ -16,26 +17,45 @@ jest.mock('#/config/dataSource', () => ({
     findOne: jest.fn(),
     createQueryBuilder: jest.fn(),
   }),
+  getProductRepository: jest.fn().mockReturnValue({
+    findOne: jest.fn(),
+  }),
 }))
 
 describe('PaymentService', () => {
   let paymentService: PaymentService
   let mockPaymentRepository: any
+  let mockProductRepository: any
 
   beforeEach(() => {
     jest.clearAllMocks()
     mockPaymentRepository =
       require('#/config/dataSource').getPaymentRepository()
+    mockProductRepository =
+      require('#/config/dataSource').getProductRepository()
     paymentService = new PaymentService()
   })
 
   describe('createPayment', () => {
-    it('creates and saves a new payment', async () => {
-      const paymentData: Partial<Payment> = {
+    it('creates and saves a new payment with status INITIALIZED', async () => {
+      const paymentData = {
         amount: 100,
-        status: PaymentStatus.INITIALIZED,
+        productId: 1,
+        paymentMethod: PaymentMethod.CREDIT_CARD,
+        userId: 'user123',
       }
-      const createdPayment = {id: 1, ...paymentData}
+      const product = {id: 1, name: 'Test Product'}
+
+      ;(mockProductRepository.findOne as jest.Mock).mockResolvedValue(product)
+
+      const createdPayment = {
+        id: 1,
+        amount: paymentData.amount,
+        paymentMethod: paymentData.paymentMethod,
+        status: PaymentStatus.INITIALIZED,
+        userId: paymentData.userId,
+        product: product,
+      }
       ;(mockPaymentRepository.create as jest.Mock).mockReturnValue(
         createdPayment
       )
@@ -46,7 +66,16 @@ describe('PaymentService', () => {
       const result = await paymentService.createPayment(paymentData)
 
       expect(result).toEqual(createdPayment)
-      expect(mockPaymentRepository.create).toHaveBeenCalledWith(paymentData)
+      expect(mockProductRepository.findOne).toHaveBeenCalledWith({
+        where: {id: paymentData.productId},
+      })
+      expect(mockPaymentRepository.create).toHaveBeenCalledWith({
+        amount: paymentData.amount,
+        paymentMethod: paymentData.paymentMethod,
+        status: PaymentStatus.INITIALIZED,
+        userId: paymentData.userId,
+        productId: product.id,
+      })
       expect(mockPaymentRepository.save).toHaveBeenCalledWith(createdPayment)
     })
   })
@@ -54,8 +83,10 @@ describe('PaymentService', () => {
   describe('updatePaymentStatus', () => {
     it('updates the status of an existing payment', async () => {
       const paymentId = 1
-      const newStatus = PaymentStatus.PAYMENT_TAKEN
-      const existingPayment = {id: paymentId, status: PaymentStatus.INITIALIZED}
+      const currentStatus = PaymentStatus.INITIALIZED
+      const newStatus = PaymentStatus.USER_SET
+      const existingPayment = {id: paymentId, status: currentStatus}
+
       const updatedPayment = {...existingPayment, status: newStatus}
       ;(mockPaymentRepository.findOne as jest.Mock).mockResolvedValue(
         existingPayment
@@ -76,12 +107,56 @@ describe('PaymentService', () => {
       expect(mockPaymentRepository.save).toHaveBeenCalledWith(updatedPayment)
     })
 
+    it('does not allow status update after completion', async () => {
+      const paymentId = 1
+      const currentStatus = PaymentStatus.COMPLETE
+      const attemptedStatus = PaymentStatus.USER_SET // Attempting to regress
+      const existingPayment = {id: paymentId, status: currentStatus}
+
+      ;(mockPaymentRepository.findOne as jest.Mock).mockResolvedValue(
+        existingPayment
+      )
+
+      await expect(
+        paymentService.updatePaymentStatus(paymentId, attemptedStatus)
+      ).rejects.toThrow(
+        `Invalid status transition from ${currentStatus} to ${attemptedStatus}`
+      )
+
+      expect(mockPaymentRepository.findOne).toHaveBeenCalledWith({
+        where: {id: paymentId},
+      })
+      expect(mockPaymentRepository.save).not.toHaveBeenCalled()
+    })
+
     it('throws an error if payment is not found', async () => {
       ;(mockPaymentRepository.findOne as jest.Mock).mockResolvedValue(null)
 
       await expect(
         paymentService.updatePaymentStatus(1, PaymentStatus.COMPLETE)
       ).rejects.toThrow('Payment not found')
+    })
+
+    it('throws an error when transitioning to an invalid status', async () => {
+      const paymentId = 1
+      const currentStatus = PaymentStatus.INITIALIZED
+      const invalidStatus = PaymentStatus.PAYMENT_TAKEN // Skipping USER_SET
+      const existingPayment = {id: paymentId, status: currentStatus}
+
+      ;(mockPaymentRepository.findOne as jest.Mock).mockResolvedValue(
+        existingPayment
+      )
+
+      await expect(
+        paymentService.updatePaymentStatus(paymentId, invalidStatus)
+      ).rejects.toThrow(
+        `Invalid status transition from ${currentStatus} to ${invalidStatus}`
+      )
+
+      expect(mockPaymentRepository.findOne).toHaveBeenCalledWith({
+        where: {id: paymentId},
+      })
+      expect(mockPaymentRepository.save).not.toHaveBeenCalled()
     })
   })
 

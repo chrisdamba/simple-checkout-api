@@ -1,4 +1,4 @@
-import {Request, Response} from 'express'
+import {NextFunction, Request, Response} from 'express'
 import {PaymentController} from '../PaymentController'
 import {PaymentService} from '../../services/PaymentService'
 import {PaymentStatus} from '../../models/Payment'
@@ -8,6 +8,7 @@ jest.mock('typeorm', () => ({
   Column: () => {},
   Entity: () => {},
   ManyToOne: () => {},
+  RelationId: () => {},
 }))
 
 jest.mock('#/services/PaymentService')
@@ -30,6 +31,7 @@ describe('PaymentController', () => {
   let mockPaymentService: jest.Mocked<PaymentService>
   let mockRequest: Partial<Request>
   let mockResponse: Partial<Response>
+  let mockNext: jest.Mocked<NextFunction>
 
   beforeEach(() => {
     mockPaymentService = new PaymentService() as jest.Mocked<PaymentService>
@@ -45,6 +47,7 @@ describe('PaymentController', () => {
       json: jest.fn(),
       status: jest.fn().mockReturnThis(),
     }
+    mockNext = jest.fn()
   })
 
   describe('createPayment', () => {
@@ -56,7 +59,8 @@ describe('PaymentController', () => {
 
       await paymentController.createPayment(
         mockRequest as Request,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext as NextFunction
       )
 
       expect(mockPaymentService.createPayment).toHaveBeenCalledWith(paymentData)
@@ -76,7 +80,8 @@ describe('PaymentController', () => {
 
       await paymentController.updatePaymentStatus(
         mockRequest as Request,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext as NextFunction
       )
 
       expect(mockPaymentService.updatePaymentStatus).toHaveBeenCalledWith(
@@ -94,7 +99,8 @@ describe('PaymentController', () => {
 
       await paymentController.getAllPayments(
         mockRequest as Request,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext as NextFunction
       )
 
       expect(mockPaymentService.getAllPayments).toHaveBeenCalled()
@@ -114,7 +120,8 @@ describe('PaymentController', () => {
 
       await paymentController.getPaymentsByStatus(
         mockRequest as Request,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext as NextFunction
       )
 
       expect(mockPaymentService.getPaymentsByStatus).toHaveBeenCalledWith(
@@ -131,7 +138,8 @@ describe('PaymentController', () => {
 
       await paymentController.getTotalCompletedPayments(
         mockRequest as Request,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext as NextFunction
       )
 
       expect(mockPaymentService.getTotalCompletedPayments).toHaveBeenCalled()

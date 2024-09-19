@@ -1,4 +1,4 @@
-import {Entity, PrimaryGeneratedColumn, Column, ManyToOne} from 'typeorm'
+import {Entity, PrimaryGeneratedColumn, Column, ManyToOne, RelationId} from 'typeorm'
 import {Product} from './Product'
 
 export enum PaymentStatus {
@@ -37,4 +37,7 @@ export class Payment {
 
   @ManyToOne(() => Product)
   product!: Product
+
+  @RelationId((payment: Payment) => payment.product)
+  productId!: number;
 }

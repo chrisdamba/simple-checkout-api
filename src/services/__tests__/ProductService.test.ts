@@ -51,7 +51,6 @@ describe('ProductService', () => {
       expect(setAsync).toHaveBeenCalledWith(
         'all_products',
         JSON.stringify(products),
-        'EX',
         3600
       )
     })

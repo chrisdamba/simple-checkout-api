@@ -1,14 +1,24 @@
-import {getPaymentRepository} from '#/config/dataSource'
+import {getPaymentRepository, getProductRepository} from '#/config/dataSource'
 import {Payment, PaymentStatus} from '#/models/Payment'
 import {ApiError} from '#/middleware/errorHandler'
 import Logger from '#/config/logger'
+import {CreatePaymentInput} from '#/interfaces/CreatePaymentInput'
 
 export class PaymentService {
   private paymentRepository = getPaymentRepository()
+  private productRepository = getProductRepository()
 
-  async createPayment(paymentData: Partial<Payment>): Promise<Payment> {
+  async createPayment(paymentData: CreatePaymentInput): Promise<Payment> {
     try {
       Logger.info('Creating new payment', {paymentData})
+      const product = await this.productRepository.findOne({
+        where: {id: paymentData.productId},
+      })
+
+      if (!product) {
+        throw new ApiError('Product not found', 404)
+      }
+      paymentData.status = PaymentStatus.INITIALIZED
       const payment = this.paymentRepository.create(paymentData)
       const savedPayment = await this.paymentRepository.save(payment)
       Logger.info('Payment created successfully', {paymentId: savedPayment.id})
@@ -21,20 +31,34 @@ export class PaymentService {
 
   async updatePaymentStatus(
     id: number,
-    status: PaymentStatus
+    newStatus: PaymentStatus
   ): Promise<Payment> {
     try {
-      Logger.info(`Updating payment status`, {paymentId: id, newStatus: status})
+      Logger.info(`Updating payment status`, {paymentId: id, newStatus})
       const payment = await this.paymentRepository.findOne({where: {id}})
       if (!payment) {
         Logger.warn(`Payment not found`, {paymentId: id})
         throw new ApiError('Payment not found', 404)
       }
-      payment.status = status
+
+      const validNextStatus = this.getNextValidStatus(payment.status)
+      if (newStatus !== validNextStatus) {
+        Logger.warn('Invalid status transition', {
+          paymentId: id,
+          currentStatus: payment.status,
+          attemptedStatus: newStatus,
+        })
+        throw new ApiError(
+          `Invalid status transition from ${payment.status} to ${newStatus}`,
+          400
+        )
+      }
+
+      payment.status = newStatus
       const updatedPayment = await this.paymentRepository.save(payment)
       Logger.info('Payment status updated successfully', {
         paymentId: id,
-        newStatus: status,
+        newStatus,
       })
       return updatedPayment
     } catch (error) {
@@ -87,6 +111,23 @@ export class PaymentService {
     } catch (error) {
       Logger.error('Error calculating total of completed payments:', error)
       throw new ApiError('Failed to calculate total of completed payments', 500)
+    }
+  }
+
+  private getNextValidStatus(
+    currentStatus: PaymentStatus
+  ): PaymentStatus | null {
+    switch (currentStatus) {
+      case PaymentStatus.INITIALIZED:
+        return PaymentStatus.USER_SET
+      case PaymentStatus.USER_SET:
+        return PaymentStatus.PAYMENT_TAKEN
+      case PaymentStatus.PAYMENT_TAKEN:
+        return PaymentStatus.COMPLETE
+      case PaymentStatus.COMPLETE:
+        return null
+      default:
+        return null
     }
   }
 }

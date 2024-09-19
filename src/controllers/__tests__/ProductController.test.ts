@@ -1,4 +1,4 @@
-import {Request, Response} from 'express'
+import {NextFunction, Request, Response} from 'express'
 import {ProductController} from '../ProductController'
 import {ProductService} from '../../services/ProductService'
 
@@ -22,6 +22,7 @@ describe('ProductController', () => {
   let mockProductService: jest.Mocked<ProductService>
   let mockRequest: Partial<Request>
   let mockResponse: Partial<Response>
+  let mockNext: jest.Mocked<NextFunction>
 
   beforeEach(() => {
     mockProductService = new ProductService() as jest.Mocked<ProductService>
@@ -33,6 +34,7 @@ describe('ProductController', () => {
       json: jest.fn(),
       status: jest.fn().mockReturnThis(),
     }
+    mockNext = jest.fn()
   })
 
   describe('getAllProducts', () => {
@@ -45,11 +47,13 @@ describe('ProductController', () => {
 
       await productController.getAllProducts(
         mockRequest as Request,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext as NextFunction
       )
 
       expect(mockProductService.getAllProducts).toHaveBeenCalled()
       expect(mockResponse.json).toHaveBeenCalledWith(products)
+      expect(mockNext).not.toHaveBeenCalled()
     })
 
     it('handles errors', async () => {
@@ -58,13 +62,13 @@ describe('ProductController', () => {
 
       await productController.getAllProducts(
         mockRequest as Request,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext as NextFunction
       )
 
-      expect(mockResponse.status).toHaveBeenCalledWith(500)
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        error: 'Internal server error',
-      })
+      expect(mockNext).toHaveBeenCalledWith(error)
+      expect(mockResponse.status).not.toHaveBeenCalled()
+      expect(mockResponse.json).not.toHaveBeenCalled()
     })
   })
 })
