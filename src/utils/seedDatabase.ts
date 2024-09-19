@@ -5,7 +5,7 @@ import {
 } from '#/config/dataSource'
 import {faker} from '@faker-js/faker'
 import {Product} from '#/models/Product'
-import {Payment, PaymentStatus} from '#/models/Payment'
+import {Payment, PaymentMethod, PaymentStatus} from '#/models/Payment'
 import Logger from '#/config/logger'
 
 async function seedDatabase() {
@@ -29,7 +29,7 @@ async function seedDatabase() {
 
     Logger.info('Seeding payments...')
     const products = await productRepository.find()
-    const paymentMethods = ['credit_card', 'paypal', 'bank_transfer']
+    const paymentMethods = Object.values(PaymentMethod)
     const statuses = Object.values(PaymentStatus)
 
     for (let i = 0; i < 100; i++) {

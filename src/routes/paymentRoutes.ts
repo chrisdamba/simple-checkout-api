@@ -1,10 +1,15 @@
 import {Router} from 'express'
 import {PaymentController} from '../controllers/PaymentController'
+import {validatePayment} from '#/middleware/validators'
 
 const router = Router()
 const paymentController = new PaymentController()
 
-router.post('/', paymentController.createPayment.bind(paymentController))
+router.post(
+  '/',
+  validatePayment,
+  paymentController.createPayment.bind(paymentController)
+)
 router.put(
   '/:id/status',
   paymentController.updatePaymentStatus.bind(paymentController)
