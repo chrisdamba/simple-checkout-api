@@ -1,7 +1,6 @@
 import {PaymentService} from '../PaymentService'
 import {PaymentRepository} from '../../config/dataSource'
 import {Payment, PaymentStatus} from '../../models/Payment'
-import { ManyToOne } from 'typeorm'
 
 jest.mock('typeorm', () => ({
   PrimaryGeneratedColumn: () => {},
