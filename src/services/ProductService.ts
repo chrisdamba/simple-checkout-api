@@ -30,7 +30,15 @@ export class ProductService {
     try {
       Logger.info('Creating new product')
       const product = this.productRepository.create(productData)
-      return await this.productRepository.save(product)
+      const savedProduct = await this.productRepository.save(product)
+
+      // update cache by invalidating the existing cache
+      await setAsync(
+        ALL_PRODUCTS,
+        JSON.stringify([...(await this.getAllProducts()), savedProduct]),
+        3600
+      )
+      return savedProduct
     } catch (error) {
       Logger.error('Error creating product:', error)
       throw new ApiError('Failed to create product', 500)
