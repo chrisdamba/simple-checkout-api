@@ -1,27 +1,28 @@
 import {ProductService} from '../ProductService'
 import {Product} from '../../models/Product'
-import {ProductRepository} from '../../config/dataSource'
 import {getAsync, setAsync} from '../../config/redis'
 
-jest.mock('../../config/dataSource', () => ({
-  ProductRepository: {
+jest.mock('#/config/dataSource', () => ({
+  getProductRepository: jest.fn().mockReturnValue({
     find: jest.fn(),
     create: jest.fn(),
     save: jest.fn(),
-  },
-}))
+  }),
+}));
 
-jest.mock('../../config/redis', () => ({
+jest.mock('#/config/redis', () => ({
   getAsync: jest.fn(),
   setAsync: jest.fn(),
-}))
+}));
 
 describe('ProductService', () => {
   let productService: ProductService
+  let mockProductRepository: any;
 
   beforeEach(() => {
-    productService = new ProductService()
-    jest.clearAllMocks()
+    jest.clearAllMocks();
+    mockProductRepository = require('#/config/dataSource').getProductRepository();
+    productService = new ProductService();
   })
 
   describe('getAllProducts', () => {
@@ -33,19 +34,19 @@ describe('ProductService', () => {
 
       expect(result).toEqual(cachedProducts)
       expect(getAsync).toHaveBeenCalledWith('all_products')
-      expect(ProductRepository.find).not.toHaveBeenCalled()
+      expect(mockProductRepository.find).not.toHaveBeenCalled();
     })
 
     it('fetches products from database and cache them if not cached', async () => {
       const products = [{id: 1, name: 'Database Product'}]
       ;(getAsync as jest.Mock).mockResolvedValue(null)
-      ;(ProductRepository.find as jest.Mock).mockResolvedValue(products)
+      ;mockProductRepository.find.mockResolvedValue(products);
 
       const result = await productService.getAllProducts()
 
       expect(result).toEqual(products)
       expect(getAsync).toHaveBeenCalledWith('all_products')
-      expect(ProductRepository.find).toHaveBeenCalled()
+      expect(mockProductRepository.find).toHaveBeenCalled()
       expect(setAsync).toHaveBeenCalledWith(
         'all_products',
         JSON.stringify(products),
@@ -63,14 +64,14 @@ describe('ProductService', () => {
         stockLevel: 100,
       }
       const createdProduct = {id: 1, ...productData}
-      ;(ProductRepository.create as jest.Mock).mockReturnValue(createdProduct)
-      ;(ProductRepository.save as jest.Mock).mockResolvedValue(createdProduct)
+      ;(mockProductRepository.create as jest.Mock).mockReturnValue(createdProduct)
+      ;(mockProductRepository.save as jest.Mock).mockResolvedValue(createdProduct)
 
       const result = await productService.createProduct(productData)
 
       expect(result).toEqual(createdProduct)
-      expect(ProductRepository.create).toHaveBeenCalledWith(productData)
-      expect(ProductRepository.save).toHaveBeenCalledWith(createdProduct)
+      expect(mockProductRepository.create).toHaveBeenCalledWith(productData)
+      expect(mockProductRepository.save).toHaveBeenCalledWith(createdProduct)
     })
   })
 })

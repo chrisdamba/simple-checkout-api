@@ -17,5 +17,5 @@ export const AppDataSource = new DataSource({
   logging: false,
 })
 
-export const ProductRepository = AppDataSource.getRepository(Product)
-export const PaymentRepository = AppDataSource.getRepository(Payment)
+export const getProductRepository = () => AppDataSource.getRepository(Product)
+export const getPaymentRepository = () => AppDataSource.getRepository(Payment)
