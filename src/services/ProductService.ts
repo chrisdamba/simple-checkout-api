@@ -1,8 +1,8 @@
 import {getProductRepository} from '#/config/dataSource'
 import Logger from '#/config/logger'
 import {getAsync, setAsync} from '#/config/redis'
-import {ALL_PRODUCTS} from '#/constants'
-import {AppError} from '#/middleware/errorHandler'
+import {ALL_PRODUCTS} from '#/utils/constants'
+import {ApiError} from '#/middleware/errorHandler'
 import {Product} from '#/models/Product'
 
 export class ProductService {
@@ -21,7 +21,7 @@ export class ProductService {
       return products
     } catch (error) {
       Logger.error('Error fetching products:', error)
-      throw new AppError('Failed to fetch products', 500)
+      throw new ApiError('Failed to fetch products', 500)
     }
   }
 
@@ -32,7 +32,7 @@ export class ProductService {
       return await this.productRepository.save(product)
     } catch (error) {
       Logger.error('Error creating product:', error)
-      throw new AppError('Failed to create product', 500)
+      throw new ApiError('Failed to create product', 500)
     }
   }
 }

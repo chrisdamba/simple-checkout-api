@@ -1,7 +1,7 @@
 import {Request, Response, NextFunction} from 'express'
 import Logger from '#/config/logger'
 
-export class AppError extends Error {
+export class ApiError extends Error {
   statusCode: number
   isOperational: boolean
 
@@ -20,7 +20,7 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  if (err instanceof AppError) {
+  if (err instanceof ApiError) {
     Logger.error(
       `${err.statusCode} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`
     )
@@ -45,6 +45,6 @@ export const notFoundHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  const err = new AppError(`Not Found - ${req.originalUrl}`, 404)
+  const err = new ApiError(`Not Found - ${req.originalUrl}`, 404)
   next(err)
 }

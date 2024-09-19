@@ -1,6 +1,6 @@
 import {getPaymentRepository} from '#/config/dataSource'
 import {Payment, PaymentStatus} from '#/models/Payment'
-import {AppError} from '#/middleware/errorHandler'
+import {ApiError} from '#/middleware/errorHandler'
 import Logger from '#/config/logger'
 
 export class PaymentService {
@@ -15,7 +15,7 @@ export class PaymentService {
       return savedPayment
     } catch (error) {
       Logger.error('Error creating payment:', error)
-      throw new AppError('Failed to create payment', 500)
+      throw new ApiError('Failed to create payment', 500)
     }
   }
 
@@ -28,7 +28,7 @@ export class PaymentService {
       const payment = await this.paymentRepository.findOne({where: {id}})
       if (!payment) {
         Logger.warn(`Payment not found`, {paymentId: id})
-        throw new AppError('Payment not found', 404)
+        throw new ApiError('Payment not found', 404)
       }
       payment.status = status
       const updatedPayment = await this.paymentRepository.save(payment)
@@ -38,9 +38,9 @@ export class PaymentService {
       })
       return updatedPayment
     } catch (error) {
-      if (error instanceof AppError) throw error
+      if (error instanceof ApiError) throw error
       Logger.error('Error updating payment status:', error)
-      throw new AppError('Failed to update payment status', 500)
+      throw new ApiError('Failed to update payment status', 500)
     }
   }
 
@@ -54,7 +54,7 @@ export class PaymentService {
       return payments
     } catch (error) {
       Logger.error('Error fetching all payments:', error)
-      throw new AppError('Failed to fetch payments', 500)
+      throw new ApiError('Failed to fetch payments', 500)
     }
   }
 
@@ -69,7 +69,7 @@ export class PaymentService {
       return payments
     } catch (error) {
       Logger.error('Error fetching payments by status:', error)
-      throw new AppError('Failed to fetch payments by status', 500)
+      throw new ApiError('Failed to fetch payments by status', 500)
     }
   }
 
@@ -86,7 +86,7 @@ export class PaymentService {
       return total
     } catch (error) {
       Logger.error('Error calculating total of completed payments:', error)
-      throw new AppError('Failed to calculate total of completed payments', 500)
+      throw new ApiError('Failed to calculate total of completed payments', 500)
     }
   }
 }

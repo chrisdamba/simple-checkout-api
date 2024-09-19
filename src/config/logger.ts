@@ -7,7 +7,9 @@ const levels = {
   warn: 1,
   info: 2,
   http: 3,
-  debug: 4,
+  verbose: 4,
+  debug: 5,
+  silly: 6,
 }
 
 const level = () => {
@@ -21,7 +23,9 @@ const colors = {
   warn: 'yellow',
   info: 'green',
   http: 'magenta',
-  debug: 'white',
+  verbose: 'cyan',
+  debug: 'blue',
+  silly: 'gray',
 }
 
 winston.addColors(colors)
@@ -42,12 +46,16 @@ const transports = [
   }),
   new winston.transports.File({filename: 'logs/all.log'}),
 ]
+const exceptionHandlers = [
+  new winston.transports.File({filename: 'logs/exceptions.log'}),
+]
 
 const Logger = winston.createLogger({
   level: level(),
   levels,
   format,
   transports,
+  exceptionHandlers,
 })
 
 export default Logger
