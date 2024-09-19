@@ -1,5 +1,4 @@
 import {PaymentService} from '../PaymentService'
-import {PaymentRepository} from '../../config/dataSource'
 import {Payment, PaymentStatus} from '../../models/Payment'
 
 jest.mock('typeorm', () => ({
@@ -9,22 +8,25 @@ jest.mock('typeorm', () => ({
   ManyToOne: () => {},
 }))
 
-jest.mock('../../config/dataSource', () => ({
-  PaymentRepository: {
+jest.mock('#/config/dataSource', () => ({
+  getPaymentRepository: jest.fn().mockReturnValue({
     create: jest.fn(),
     save: jest.fn(),
     find: jest.fn(),
     findOne: jest.fn(),
     createQueryBuilder: jest.fn(),
-  },
+  }),
 }))
 
 describe('PaymentService', () => {
   let paymentService: PaymentService
+  let mockPaymentRepository: any
 
   beforeEach(() => {
-    paymentService = new PaymentService()
     jest.clearAllMocks()
+    mockPaymentRepository =
+      require('#/config/dataSource').getPaymentRepository()
+    paymentService = new PaymentService()
   })
 
   describe('createPayment', () => {
@@ -34,14 +36,18 @@ describe('PaymentService', () => {
         status: PaymentStatus.INITIALIZED,
       }
       const createdPayment = {id: 1, ...paymentData}
-      ;(PaymentRepository.create as jest.Mock).mockReturnValue(createdPayment)
-      ;(PaymentRepository.save as jest.Mock).mockResolvedValue(createdPayment)
+      ;(mockPaymentRepository.create as jest.Mock).mockReturnValue(
+        createdPayment
+      )
+      ;(mockPaymentRepository.save as jest.Mock).mockResolvedValue(
+        createdPayment
+      )
 
       const result = await paymentService.createPayment(paymentData)
 
       expect(result).toEqual(createdPayment)
-      expect(PaymentRepository.create).toHaveBeenCalledWith(paymentData)
-      expect(PaymentRepository.save).toHaveBeenCalledWith(createdPayment)
+      expect(mockPaymentRepository.create).toHaveBeenCalledWith(paymentData)
+      expect(mockPaymentRepository.save).toHaveBeenCalledWith(createdPayment)
     })
   })
 
@@ -51,10 +57,12 @@ describe('PaymentService', () => {
       const newStatus = PaymentStatus.PAYMENT_TAKEN
       const existingPayment = {id: paymentId, status: PaymentStatus.INITIALIZED}
       const updatedPayment = {...existingPayment, status: newStatus}
-      ;(PaymentRepository.findOne as jest.Mock).mockResolvedValue(
+      ;(mockPaymentRepository.findOne as jest.Mock).mockResolvedValue(
         existingPayment
       )
-      ;(PaymentRepository.save as jest.Mock).mockResolvedValue(updatedPayment)
+      ;(mockPaymentRepository.save as jest.Mock).mockResolvedValue(
+        updatedPayment
+      )
 
       const result = await paymentService.updatePaymentStatus(
         paymentId,
@@ -62,14 +70,14 @@ describe('PaymentService', () => {
       )
 
       expect(result).toEqual(updatedPayment)
-      expect(PaymentRepository.findOne).toHaveBeenCalledWith({
+      expect(mockPaymentRepository.findOne).toHaveBeenCalledWith({
         where: {id: paymentId},
       })
-      expect(PaymentRepository.save).toHaveBeenCalledWith(updatedPayment)
+      expect(mockPaymentRepository.save).toHaveBeenCalledWith(updatedPayment)
     })
 
     it('throws an error if payment is not found', async () => {
-      ;(PaymentRepository.findOne as jest.Mock).mockResolvedValue(null)
+      ;(mockPaymentRepository.findOne as jest.Mock).mockResolvedValue(null)
 
       await expect(
         paymentService.updatePaymentStatus(1, PaymentStatus.COMPLETE)
@@ -80,12 +88,12 @@ describe('PaymentService', () => {
   describe('getAllPayments', () => {
     it('returns all payments', async () => {
       const payments = [{id: 1}, {id: 2}]
-      ;(PaymentRepository.find as jest.Mock).mockResolvedValue(payments)
+      ;(mockPaymentRepository.find as jest.Mock).mockResolvedValue(payments)
 
       const result = await paymentService.getAllPayments()
 
       expect(result).toEqual(payments)
-      expect(PaymentRepository.find).toHaveBeenCalledWith({
+      expect(mockPaymentRepository.find).toHaveBeenCalledWith({
         relations: ['product'],
       })
     })
@@ -98,12 +106,12 @@ describe('PaymentService', () => {
         {id: 1, status},
         {id: 2, status},
       ]
-      ;(PaymentRepository.find as jest.Mock).mockResolvedValue(payments)
+      ;(mockPaymentRepository.find as jest.Mock).mockResolvedValue(payments)
 
       const result = await paymentService.getPaymentsByStatus(status)
 
       expect(result).toEqual(payments)
-      expect(PaymentRepository.find).toHaveBeenCalledWith({
+      expect(mockPaymentRepository.find).toHaveBeenCalledWith({
         where: {status},
         relations: ['product'],
       })
@@ -117,14 +125,14 @@ describe('PaymentService', () => {
         select: jest.fn().mockReturnThis(),
         getRawOne: jest.fn().mockResolvedValue({total: 1000}),
       }
-      ;(PaymentRepository.createQueryBuilder as jest.Mock).mockReturnValue(
+      ;(mockPaymentRepository.createQueryBuilder as jest.Mock).mockReturnValue(
         mockQueryBuilder
       )
 
       const result = await paymentService.getTotalCompletedPayments()
 
       expect(result).toEqual(1000)
-      expect(PaymentRepository.createQueryBuilder).toHaveBeenCalledWith(
+      expect(mockPaymentRepository.createQueryBuilder).toHaveBeenCalledWith(
         'payment'
       )
       expect(mockQueryBuilder.where).toHaveBeenCalledWith(
@@ -143,7 +151,7 @@ describe('PaymentService', () => {
         select: jest.fn().mockReturnThis(),
         getRawOne: jest.fn().mockResolvedValue({total: null}),
       }
-      ;(PaymentRepository.createQueryBuilder as jest.Mock).mockReturnValue(
+      ;(mockPaymentRepository.createQueryBuilder as jest.Mock).mockReturnValue(
         mockQueryBuilder
       )
 
