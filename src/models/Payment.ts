@@ -1,0 +1,34 @@
+import {Entity, PrimaryGeneratedColumn, Column, ManyToOne} from 'typeorm'
+import {Product} from './Product'
+
+export enum PaymentStatus {
+  INITIALIZED = 'initialized',
+  USER_SET = 'user_set',
+  PAYMENT_TAKEN = 'payment_taken',
+  COMPLETE = 'complete',
+}
+
+@Entity()
+export class Payment {
+  @PrimaryGeneratedColumn()
+  id!: number
+
+  @Column('decimal')
+  amount!: number
+
+  @Column()
+  paymentMethod!: string
+
+  @Column({
+    type: 'enum',
+    enum: PaymentStatus,
+    default: PaymentStatus.INITIALIZED,
+  })
+  status!: PaymentStatus;
+
+  @Column()
+  userId!: string // assuming Auth0 user ID
+
+  @ManyToOne(() => Product)
+  product!: Product
+}
