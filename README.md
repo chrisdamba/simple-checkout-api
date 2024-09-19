@@ -10,6 +10,9 @@ A robust and secure API for managing a simple checkout system, built with Node.j
 - Redis caching for improved performance
 - Comprehensive unit tests using Jest
 - Follows SOLID design principles and best practices
+- Detailed error handling
+- Database seeding for development and testing
+- Comprehensive unit tests using Jest
 
 ## Prerequisites
 
@@ -58,25 +61,38 @@ Before you begin, ensure you have met the following requirements:
 ## Database Setup
 
 1. Create a PostgreSQL database:
-
    ```
    createdb checkout_db
    ```
 
 2. Run database migrations:
    ```
-   npm run migrate
+   npm run typeorm migration:run
+   ```
+
+3. (Optional) Seed the database with sample data:
+   ```
+   npm run seed
    ```
 
 ## Usage
 
 1. Start the development server:
-
    ```
    npm run dev
    ```
 
-2. The API will be available at `http://localhost:3000`
+2. Build the project for production:
+   ```
+   npm run build
+   ```
+
+3. Start the production server:
+   ```
+   npm start
+   ```
+
+The API will be available at `http://localhost:3000` (or the port you specified in the .env file).
 
 ## API Endpoints
 
@@ -105,6 +121,13 @@ To run tests in watch mode:
 ```
 npm run test:watch
 ```
+
+## Logging
+
+Logs are stored in the `logs` directory:
+- `error.log`: Contains error logs
+- `all.log`: Contains all logs (including info, warn, and error)
+
 
 ## Acknowledgements
 
